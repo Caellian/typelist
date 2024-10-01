@@ -16,7 +16,9 @@ authors = ["Tin Švagelj <tin.svagelj@live.com>"]
 license = "MIT OR Apache-2.0 OR Zlib"
 
 [features]
+default = ["generic_impl"]
 type_defaults = []
+generic_impl = []
 
 [build-dependencies]
 variadic-t-codegen = { path = "./codegen" }

@@ -3,7 +3,7 @@ use std::ops::RangeBounds;
 
 use crate::{
     alphabet::{Alphabet, AlphabetGenerator},
-    util::AsIdentPath as _,
+    util::{AsIdentPath as _, ident_ty},
 };
 use proc_macro2::Span;
 use syn::{punctuated::Punctuated, *};
@@ -45,6 +45,15 @@ impl TupleT<Pure> {
         let mut result = self.clone();
         result.names.reverse();
         result
+    }
+}
+
+impl TupleT<Dirty> {
+    pub fn from_iter(idents: impl IntoIterator<Item = Ident>) -> Self {
+        Self {
+            names: idents.into_iter().collect(),
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -102,12 +111,7 @@ impl<P: TuplePurity> TupleT<P> {
         self.names
             .first()
             .cloned()
-            .map(|it| {
-                Type::Path(TypePath {
-                    qself: None,
-                    path: Path::from(it),
-                })
-            })
+            .map(ident_ty)
             .unwrap_or_else(|| ["crate", "Never"].to_type())
     }
 
@@ -120,12 +124,7 @@ impl<P: TuplePurity> TupleT<P> {
         self.names
             .last()
             .cloned()
-            .map(|it| {
-                Type::Path(TypePath {
-                    qself: None,
-                    path: Path::from(it),
-                })
-            })
+            .map(ident_ty)
             .unwrap_or_else(|| ["crate", "Never"].to_type())
     }
 
@@ -134,14 +133,10 @@ impl<P: TuplePurity> TupleT<P> {
         self.names.get(index).cloned()
     }
 
+    #[inline]
     pub fn get_type(&self, index: usize) -> Type {
         self.get(index)
-            .map(|it| {
-                Type::Path(TypePath {
-                    qself: None,
-                    path: Path::from(it),
-                })
-            })
+            .map(ident_ty)
             .unwrap_or_else(|| ["crate", "Never"].to_type())
     }
 
@@ -151,17 +146,14 @@ impl<P: TuplePurity> TupleT<P> {
         result
     }
 
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = Ident> + '_ {
         self.names.iter().cloned()
     }
 
+    #[inline]
     pub fn iter_types(&self) -> impl Iterator<Item = Type> + '_ {
-        self.iter().map(|it| {
-            Type::Path(TypePath {
-                qself: None,
-                path: Path::from(it),
-            })
-        })
+        self.iter().map(ident_ty)
     }
 
     pub fn slice<R>(&self, range: R) -> Self

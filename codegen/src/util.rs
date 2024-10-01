@@ -149,7 +149,7 @@ impl AddModule for Vec<Item> {
                 vis: match module.visibility {
                     ModuleVisibility::Private | ModuleVisibility::Flat => Visibility::Inherited,
                     ModuleVisibility::Public => Visibility::Public(Default::default()),
-                    ModuleVisibility::Crate => crate_visibility()
+                    ModuleVisibility::Crate => crate_visibility(),
                 },
                 unsafety: None,
                 mod_token: Default::default(),
@@ -168,6 +168,32 @@ impl AddModule for Vec<Item> {
             },
             module.name,
         ));
+    }
+}
+
+pub trait CollectGenerics {
+    fn collect_generics(self, where_clause: Option<WhereClause>) -> Generics;
+}
+impl<I> CollectGenerics for I
+where
+    I: IntoIterator<Item = Ident>,
+{
+    fn collect_generics(self, where_clause: Option<WhereClause>) -> Generics {
+        Generics {
+            lt_token: Default::default(),
+            params: Punctuated::from_iter(self.into_iter().map(|ident| {
+                GenericParam::Type(TypeParam {
+                    attrs: vec![],
+                    ident,
+                    colon_token: None,
+                    bounds: Default::default(),
+                    eq_token: None,
+                    default: None,
+                })
+            })),
+            gt_token: Default::default(),
+            where_clause,
+        }
     }
 }
 
@@ -205,6 +231,11 @@ pub fn use_module(visibility: ModuleVisibility, name: impl AsRef<str>) -> Item {
 }
 
 #[inline]
+pub fn ident_ty(ident: Ident) -> Type {
+    Type::Path(TypePath { qself: None, path: Path::from(ident) })
+}
+
+#[inline]
 pub fn index_tuple(tuple: &Expr, index: usize) -> Expr {
     Expr::Field(ExprField {
         attrs: vec![],
@@ -212,4 +243,38 @@ pub fn index_tuple(tuple: &Expr, index: usize) -> Expr {
         dot_token: Default::default(),
         member: Member::Unnamed(index.into()),
     })
+}
+
+fn function_bound(kind: &str, inputs: impl IntoIterator<Item = Type>, output: Type) -> TraitBound {
+    TraitBound {
+        paren_token: None,
+        modifier: TraitBoundModifier::None,
+        lifetimes: None,
+        path: Path {
+            leading_colon: None,
+            segments: Punctuated::from_iter([PathSegment {
+                ident: Ident::new(kind, Span::call_site()),
+                arguments: PathArguments::Parenthesized(
+                    ParenthesizedGenericArguments {
+                        paren_token: Default::default(),
+                        inputs: Punctuated::from_iter(inputs),
+                        output: ReturnType::Type(Default::default(), Box::new(output)),
+                    },
+                ),
+            }]),
+        },
+    }
+}
+
+#[inline]
+pub fn fnonce_bound(inputs: impl IntoIterator<Item = Type>, output: Type) -> TraitBound {
+    function_bound("FnOnce", inputs, output)
+}
+#[inline]
+pub fn fn_bound(inputs: impl IntoIterator<Item = Type>, output: Type) -> TraitBound {
+    function_bound("Fn", inputs, output)
+}
+#[inline]
+pub fn fnmut_bound(inputs: impl IntoIterator<Item = Type>, output: Type) -> TraitBound {
+    function_bound("FnMut", inputs, output)
 }

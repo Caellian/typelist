@@ -4,7 +4,7 @@ pub trait TypeList {
     /// Head or first eleemnt of the type list.
     type Head;
     /// Tailing elements after the first one.
-    type Tail;
+    type Tail: TypeList;
     /// First tuple element.
     type First;
     /// Last tuple element.
@@ -15,7 +15,7 @@ pub trait TypeList {
     type Value<const INDEX: usize> = <Self as HasElement<INDEX>>::Value where Self: HasElement<INDEX>;
 
     /// Tuple types in reverse order.
-    type Reverse;
+    type Reverse: TypeList;
 
     /// Resulting tuple produced by pushing `T` to the back of this tuple.
     type PushBack<T>;
@@ -120,8 +120,6 @@ pub trait TypeList {
 }
 
 mod _properties {
-    use crate::Map1;
-
     use super::TypeList;
 
     /// Denotes that a tuple has `INDEX` element.
@@ -136,7 +134,7 @@ mod _properties {
     /// Denotes that a tuple has at least one element.
     pub trait NonEmpty: TypeList {
         /// All elements leading up to the last one.
-        type LTail;
+        type LTail: TypeList;
 
         fn first(&self) -> &Self::First;
         fn last(&self) -> &Self::Last;
@@ -144,49 +142,6 @@ mod _properties {
         fn pop_back(self) -> (Self::Last, Self::LTail);
         fn pop_front(self) -> (Self::Head, Self::Tail);
     }
-
-    trait HasMap1<IA, FA> {
-        type Result: TypeList;
-        fn map(self, m: (FA,)) -> Self::Result
-        where
-            Self::Result: HasElement<0>,
-            (FA,): Map1<IA, Result0 = <Self::Result as HasElement<0>>::Value>;
-    }
-    impl<IA, OA, FA> HasMap1<IA, FA> for (IA,)
-    where
-        FA: FnOnce(IA) -> OA,
-    {
-        type Result = (OA,);
-        fn map(self, m: (FA,)) -> Self::Result
-        where
-            Self::Result: HasElement<0>,
-            (FA,): Map1<IA, Result0 = OA> {
-            m.apply(self)
-        }
-    }
-
-    /*
-    /// Allows mapping individual tuple elements using a tuple of mapping
-    /// functions with equal arity where each mapping function consumes
-    /// corresponding input type, and produces output type which are then all
-    /// collected in resulting tuple.
-    pub trait Fibration<E...>: TypeList<Elements = (...E)> {
-        type Lift = Map<N, ...E>;
-
-        fn map(self, mapping: Lift) -> Lift::Result;
-    }
-
-    pub struct Map<const N: usize, E...> {
-        _phantom: std::marker::PhantomData<[(...E); N]>
-    }
-    impl<E...> Map<1, ...E> {
-        type Map = Map1<...E>;
-    }
-    impl<E...> Map<2, ...E> {
-        type Map = Map2<...E>;
-    }
-    // etc.
-    */
 
     /// A type that can never exist.
     ///
@@ -196,4 +151,5 @@ mod _properties {
 }
 use _properties::*;
 
+#[cfg(feature = "generic_impl")]
 include!("./gen.rs");

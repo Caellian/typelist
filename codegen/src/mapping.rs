@@ -4,22 +4,14 @@ use syn::{punctuated::Punctuated, *};
 
 use crate::{
     types::{Pure, TupleT},
-    util::{index_tuple, AsIdentPath, Module, ModuleVisibility},
+    util::{
+        fnmut_bound, ident_ty, index_tuple, AsIdentPath, CollectGenerics, Module, ModuleVisibility,
+    },
     Options,
 };
 
 pub struct TupleMappingTrait<'a> {
     pub target: &'a TupleT<Pure>,
-}
-
-fn generic_types(param: &GenericParam) -> Option<Type> {
-    match param {
-        GenericParam::Type(t) => Some(Type::Path(TypePath {
-            qself: None,
-            path: Path::from(t.ident.clone()),
-        })),
-        _ => None,
-    }
 }
 
 impl<'a> TupleMappingTrait<'a> {
@@ -34,169 +26,197 @@ impl<'a> TupleMappingTrait<'a> {
         })
     }
 
-    pub fn into_items(self) -> Vec<Item> {
-        if self.target.is_empty() {
-            return vec![];
+    fn name_ident(&self) -> Ident {
+        format_ident!("Map{}", self.target.len())
+    }
+    fn name_path(&self, arguments: impl IntoIterator<Item = GenericArgument>) -> Path {
+        let mut path = Path::from(self.name_ident());
+        let mut args = arguments.into_iter();
+        if let Some(first_arg) = args.next() {
+            let segment = path.segments.last_mut().unwrap();
+            segment.arguments = PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                colon2_token: None,
+                lt_token: Default::default(),
+                args: Punctuated::from_iter(std::iter::once(first_arg).chain(args)),
+                gt_token: Default::default(),
+            })
         }
-        let mut result = Vec::new();
+        path
+    }
+    fn name_path_with_inputs(&self) -> Path {
+        self.name_path(self.input_idents().map(ident_ty).map(GenericArgument::Type))
+    }
+    fn input_idents(&self) -> impl Iterator<Item = Ident> + '_ {
+        self.target
+            .iter_names()
+            .map(|name| format_ident!("I{}", name))
+    }
+    fn output_idents(&self) -> impl Iterator<Item = Ident> + '_ {
+        self.target
+            .iter_names()
+            .map(|name| format_ident!("O{}", name))
+    }
+    fn fn_idents(&self) -> impl Iterator<Item = Ident> + '_ {
+        self.target
+            .iter_names()
+            .map(|name| format_ident!("F{}", name))
+    }
 
-        let name = format_ident!("Map{}", self.target.len());
-        let (i_generics, o_generics, applicators, io_generics) = {
-            let (mut i, mut o, mut a) = {
-                let g = self.target.generics(None, None);
-                (g.clone(), g.clone(), g)
-            };
-            for p in i.params.iter_mut() {
-                if let GenericParam::Type(ty_p) = p {
-                    ty_p.ident = format_ident!("I{}", ty_p.ident);
-                }
-            }
-            for p in o.params.iter_mut() {
-                if let GenericParam::Type(ty_p) = p {
-                    ty_p.ident = format_ident!("O{}", ty_p.ident);
-                }
-            }
-            for p in a.params.iter_mut() {
-                if let GenericParam::Type(ty_p) = p {
-                    ty_p.ident = format_ident!("F{}", ty_p.ident);
-                }
-            }
-            let mut io = i.clone();
-            for o_item in o.params.iter() {
-                io.params.push(o_item.clone());
-            }
-            for a_item in a.params.iter() {
-                io.params.push(a_item.clone());
-            }
-            (i, o, a, io)
-        };
+    fn result_names(&self) -> impl Iterator<Item = Ident> + '_ {
+        (0..self.target.len()).map(|i| format_ident!("Result{}", i))
+    }
+    fn result_tuple(&self) -> Type {
+        Type::Tuple(TypeTuple {
+            paren_token: Default::default(),
+            elems: Punctuated::from_iter(
+                self.result_names()
+                    .map(|result| ["Self", result.to_string().as_str()].to_type()),
+            ),
+        })
+    }
+    fn apply_all_sig(&self, mut_self: bool) -> Signature {
+        Signature {
+            constness: None,
+            asyncness: None,
+            unsafety: None,
+            abi: None,
+            fn_token: Default::default(),
+            ident: Ident::new("apply", Span::call_site()),
+            generics: Default::default(),
+            paren_token: Default::default(),
+            inputs: Punctuated::from_iter([
+                if mut_self {
+                    parse_quote!(mut self)
+                } else {
+                    parse_quote!(self)
+                },
+                FnArg::Typed(PatType {
+                    attrs: vec![],
+                    pat: Box::new(Pat::Ident(PatIdent {
+                        attrs: vec![],
+                        by_ref: None,
+                        mutability: None,
+                        ident: Ident::new("value", Span::call_site()),
+                        subpat: None,
+                    })),
+                    colon_token: Default::default(),
+                    ty: Box::new(Type::Tuple(TypeTuple {
+                        paren_token: Default::default(),
+                        elems: Punctuated::from_iter(self.input_idents().map(ident_ty)),
+                    })),
+                }),
+            ]),
+            variadic: None,
+            output: ReturnType::Type(Default::default(), Box::new(self.result_tuple())),
+        }
+    }
 
-        let result_type_decl: Vec<_> = (0..self.target.len())
-            .map(|i| TraitItemType {
+    fn declare_base_trait(&self) -> Item {
+        let result_type_decl = self.result_names().map(|ident| {
+            TraitItem::Type(TraitItemType {
                 attrs: vec![],
                 type_token: Default::default(),
-                ident: format_ident!("Result{}", i),
+                ident,
                 generics: Default::default(),
                 colon_token: None,
                 bounds: Default::default(),
                 default: None,
                 semi_token: Default::default(),
             })
-            .collect();
-
-        let self_results: Vec<_> = (0..self.target.len())
-            .map(|i| ["Self", format!("Result{}", i).as_str()].to_type())
-            .collect();
-
-        let map_declarations: Vec<_> = self
-            .mapping_signatures(parse_quote!(self))
-            .map(|sig| {
-                TraitItem::Fn(TraitItemFn {
-                    attrs: vec![],
-                    sig,
-                    default: None,
-                    semi_token: Some(Default::default()),
-                })
-            })
-            .collect();
-
-        let result_union_ty = Type::Tuple(TypeTuple {
-            paren_token: Default::default(),
-            elems: Punctuated::from_iter(self_results.iter().cloned()),
         });
 
-        let input_tuple = Type::Tuple(TypeTuple {
-            paren_token: Default::default(),
-            elems: Punctuated::from_iter(i_generics.params.iter().filter_map(generic_types)),
+        let map_declarations = self.mapping_signatures(parse_quote!(self)).map(|sig| {
+            TraitItem::Fn(TraitItemFn {
+                attrs: vec![],
+                sig,
+                default: None,
+                semi_token: Some(Default::default()),
+            })
         });
 
-        result.push(Item::Trait(parse_quote! {
-            pub trait #name #i_generics {
-                #(#result_type_decl)*
-                #(#map_declarations)*
-
-                #[allow(clippy::type_complexity)]
-                fn apply(self, value: #input_tuple) -> #result_union_ty;
-            }
-        }));
-
-        let map_fns_invokes: Vec<_> = (0..self.target.len())
-            .map(|i| {
-                let f = index_tuple(&"self".to_expr(), i);
-                let f = Expr::Paren(ExprParen {
-                    attrs: vec![],
-                    paren_token: Default::default(),
-                    expr: Box::new(f),
-                });
-                Expr::Call(ExprCall {
-                    attrs: vec![],
-                    func: Box::new(f),
-                    paren_token: Default::default(),
-                    args: Punctuated::from_iter([index_tuple(&"value".to_expr(), i)]),
-                })
-            })
-            .collect();
-
-        let applicator_predicates: Vec<WherePredicate> = applicators
-            .params
-            .iter()
-            .filter_map(generic_types)
-            .zip(
-                i_generics
-                    .params
-                    .iter()
-                    .filter_map(generic_types)
-                    .zip(o_generics.params.iter().filter_map(generic_types)),
-            )
-            .map(|(f, (i, o))| {
-                WherePredicate::Type(PredicateType {
-                    lifetimes: None,
-                    bounded_ty: f,
-                    colon_token: Default::default(),
-                    bounds: Punctuated::from_iter([TypeParamBound::Trait(TraitBound {
-                        paren_token: None,
-                        modifier: TraitBoundModifier::None,
-                        lifetimes: None,
-                        path: Path {
-                            leading_colon: None,
-                            segments: Punctuated::from_iter([PathSegment {
-                                ident: Ident::new("FnMut", Span::call_site()),
-                                arguments: PathArguments::Parenthesized(
-                                    ParenthesizedGenericArguments {
-                                        paren_token: Default::default(),
-                                        inputs: Punctuated::from_iter([i]),
-                                        output: ReturnType::Type(Default::default(), Box::new(o)),
-                                    },
-                                ),
-                            }]),
-                        },
+        Item::Trait(ItemTrait {
+            attrs: vec![],
+            vis: Visibility::Public(Default::default()),
+            unsafety: None,
+            auto_token: None,
+            restriction: None,
+            trait_token: Default::default(),
+            ident: self.name_ident(),
+            generics: Generics {
+                lt_token: Default::default(),
+                params: Punctuated::from_iter(self.input_idents().map(|ident| {
+                    GenericParam::Type(TypeParam {
+                        attrs: vec![],
+                        ident,
+                        colon_token: None,
+                        bounds: Default::default(),
+                        eq_token: None,
+                        default: None,
+                    })
+                })),
+                gt_token: Default::default(),
+                where_clause: None,
+            },
+            colon_token: None,
+            supertraits: Default::default(),
+            brace_token: Default::default(),
+            items: Vec::from_iter(
+                result_type_decl
+                    .chain(map_declarations)
+                    .chain([TraitItem::Fn(TraitItemFn {
+                        attrs: vec![parse_quote!(#[allow(clippy::type_complexity)])],
+                        sig: self.apply_all_sig(false),
+                        default: None,
+                        semi_token: Default::default(),
                     })]),
-                })
-            })
-            .collect();
+            ),
+        })
+    }
 
-        let apply_tuple = Type::Tuple(TypeTuple {
-            paren_token: Default::default(),
-            elems: Punctuated::from_iter(applicators.params.iter().filter_map(generic_types)),
-        });
+    fn impl_base_for_fn_tuple(&self) -> Item {
+        let generics = self
+            .input_idents()
+            .chain(self.output_idents())
+            .chain(self.fn_idents())
+            .collect_generics(Some(WhereClause {
+                where_token: Default::default(),
+                predicates: Punctuated::from_iter(
+                    self.fn_idents()
+                        .map(ident_ty)
+                        .zip(
+                            self.input_idents()
+                                .map(ident_ty)
+                                .zip(self.output_idents().map(ident_ty)),
+                        )
+                        .map(|(f, (i, o))| {
+                            WherePredicate::Type(PredicateType {
+                                lifetimes: None,
+                                bounded_ty: f,
+                                colon_token: Default::default(),
+                                bounds: Punctuated::from_iter([TypeParamBound::Trait(
+                                    fnmut_bound([i], o),
+                                )]),
+                            })
+                        }),
+                ),
+            }));
 
-        let result_types: Vec<_> = result_type_decl
-            .into_iter()
-            .zip(o_generics.params.iter().filter_map(generic_types))
-            .map(|(result_t, value_t)| {
+        let result_types = self
+            .result_names()
+            .zip(self.output_idents().map(ident_ty))
+            .map(|(ident, ty)| {
                 ImplItem::Type(ImplItemType {
                     attrs: vec![],
                     vis: Visibility::Inherited,
                     defaultness: None,
                     type_token: Default::default(),
-                    ident: result_t.ident,
+                    ident,
                     generics: Default::default(),
                     eq_token: Default::default(),
-                    ty: value_t,
+                    ty,
                     semi_token: Default::default(),
                 })
-            })
-            .collect();
+            });
 
         let map_impls = self
             .mapping_signatures(parse_quote!(mut self))
@@ -226,25 +246,76 @@ impl<'a> TupleMappingTrait<'a> {
                 })
             });
 
-        let mut applicator_tuple: ItemImpl = parse_quote! {
-            impl #io_generics #name #i_generics for #apply_tuple {
-                #(#result_types)*
-                #(#map_impls)*
-
-                fn apply(mut self, value: #input_tuple) -> #result_union_ty {
-                    (
-                        #(#map_fns_invokes,)*
-                    )
-                }
-            }
-        };
-        applicator_tuple.generics.where_clause = Some(WhereClause {
-            where_token: Default::default(),
-            predicates: Punctuated::from_iter(applicator_predicates),
+        let apply_fn = ImplItem::Fn(ImplItemFn {
+            attrs: vec![],
+            vis: Visibility::Inherited,
+            defaultness: None,
+            sig: self.apply_all_sig(true),
+            block: Block {
+                brace_token: Default::default(),
+                stmts: vec![Stmt::Expr(
+                    Expr::Tuple(ExprTuple {
+                        attrs: vec![],
+                        paren_token: Default::default(),
+                        elems: Punctuated::from_iter((0..self.target.len()).map(|i| {
+                            let f = index_tuple(&"self".to_expr(), i);
+                            let f = Expr::Paren(ExprParen {
+                                attrs: vec![],
+                                paren_token: Default::default(),
+                                expr: Box::new(f),
+                            });
+                            Expr::Call(ExprCall {
+                                attrs: vec![],
+                                func: Box::new(f),
+                                paren_token: Default::default(),
+                                args: Punctuated::from_iter([index_tuple(&"value".to_expr(), i)]),
+                            })
+                        })),
+                    }),
+                    None,
+                )],
+            },
         });
-        result.push(Item::Impl(applicator_tuple));
 
-        result
+        Item::Impl(ItemImpl {
+            attrs: vec![],
+            defaultness: None,
+            unsafety: None,
+            impl_token: Default::default(),
+            generics,
+            trait_: Some((None, self.name_path_with_inputs(), Default::default())),
+            self_ty: Box::new(Type::Tuple(TypeTuple {
+                paren_token: Default::default(),
+                elems: Punctuated::from_iter(self.fn_idents().map(ident_ty)),
+            })),
+            brace_token: Default::default(),
+            items: Vec::from_iter(result_types.chain(map_impls).chain([apply_fn])),
+        })
+    }
+
+    #[allow(unused)]
+    fn todo() {
+        /*
+        trait HasMap1<IA, FA> {
+            type Result: TypeList;
+            fn map(self, m: (FA,)) -> Self::Result
+            where
+                Self::Result: HasElement<0>,
+                (FA,): Map1<IA, Result0 = <Self::Result as HasElement<0>>::Value>;
+        }
+        impl<IA, OA, FA> HasMap1<IA, FA> for (IA,)
+        where
+            FA: FnOnce(IA) -> OA,
+        {
+            type Result = (OA,);
+            fn map(self, m: (FA,)) -> Self::Result
+            where
+                Self::Result: HasElement<0>,
+                (FA,): Map1<IA, Result0 = OA> {
+                m.apply(self)
+            }
+        }
+        */
     }
 }
 
@@ -254,8 +325,10 @@ pub(crate) const MAPPING_MODULE: Module = Module {
     generate: generate_module,
 };
 fn generate_module(items: &mut Vec<Item>, options: &Options) {
-    for size in 0..=options.size {
+    for size in 1..=options.size {
         let variant = TupleT::new(size);
-        items.append(&mut TupleMappingTrait { target: &variant }.into_items())
+        let mapping = TupleMappingTrait { target: &variant };
+        items.push(mapping.declare_base_trait());
+        items.push(mapping.impl_base_for_fn_tuple());
     }
 }
