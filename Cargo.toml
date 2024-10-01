@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "codegen",
+    "macros"
+]
+default-members = [
+    "codegen",
+    "macros"
+]
+
+[package]
+name = "variadic-t"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tin Švagelj <tin.svagelj@live.com>"]
+license = "MIT OR Apache-2.0 OR Zlib"
+
+[features]
+type_defaults = []
+
+[build-dependencies]
+variadic-t-codegen = { path = "./codegen" }

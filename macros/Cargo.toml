@@ -1,0 +1,12 @@
+[package]
+name = "variadic-t-macros"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tin Švagelj <tin.svagelj@live.com>"]
+license = "MIT OR Apache-2.0 OR Zlib"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+variadic-t-codegen = { path = "../codegen" }
