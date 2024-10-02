@@ -1,6 +1,6 @@
 use crate::{
     types::{Pure, TupleT},
-    value::TupleV, util::{AsIdentPath as _, index_tuple},
+    value::TupleV, util::{AsIdentPath as _, index_tuple, default},
 };
 
 use proc_macro2::Span;
@@ -19,11 +19,11 @@ pub trait TupleTrait: Sized {
             attrs: vec![],
             defaultness: None,
             unsafety: None,
-            impl_token: Default::default(),
+            impl_token: default(),
             generics: self.target().generics(None, None),
-            trait_: Some((None, self.for_trait(), Default::default())),
+            trait_: Some((None, self.for_trait(), default())),
             self_ty: Box::new(self.target().clone().into()),
-            brace_token: Default::default(),
+            brace_token: default(),
             items,
         })
     }
@@ -63,7 +63,7 @@ impl<'a> TupleTrait for BaseImpl<'a> {
                 "PushFront",
                 front,
                 Some(Generics {
-                    lt_token: Default::default(),
+                    lt_token: default(),
                     params: Punctuated::from_iter(
                         [GenericParam::Type(TypeParam {
                             attrs: vec![],
@@ -74,7 +74,7 @@ impl<'a> TupleTrait for BaseImpl<'a> {
                             default: None,
                         })],
                     ),
-                    gt_token: Default::default(),
+                    gt_token: default(),
                     where_clause: None,
                 }),
             ));
@@ -82,7 +82,7 @@ impl<'a> TupleTrait for BaseImpl<'a> {
                 "PushBack",
                 back,
                 Some(Generics {
-                    lt_token: Default::default(),
+                    lt_token: default(),
                     params: Punctuated::from_iter(
                         [GenericParam::Type(TypeParam {
                             attrs: vec![],
@@ -93,7 +93,7 @@ impl<'a> TupleTrait for BaseImpl<'a> {
                             default: None,
                         })],
                     ),
-                    gt_token: Default::default(),
+                    gt_token: default(),
                     where_clause: None,
                 }),
             ));
@@ -122,11 +122,11 @@ impl<'a> TupleTrait for BaseImpl<'a> {
         items.push(simple_type_item(
             "Variants",
             Type::Array(TypeArray {
-                bracket_token: Default::default(),
+                bracket_token: default(),
                 elem: parse_quote! {
                     Self::Variant
                 },
-                semi_token: Default::default(),
+                semi_token: default(),
                 len: len_lit_expr.clone(),
             }),
             None,
@@ -198,7 +198,7 @@ impl<'a> TupleTrait for BaseImpl<'a> {
                             ]),
                         },
                     })),
-                    paren_token: Default::default(),
+                    paren_token: default(),
                     args: Punctuated::from_iter([value_i]),
                 })
             });
@@ -330,12 +330,12 @@ fn simple_type_item(
         attrs: vec![],
         vis: Visibility::Inherited,
         defaultness: None,
-        type_token: Default::default(),
+        type_token: default(),
         ident: Ident::new(name.as_ref(), Span::call_site()),
         generics: generics.unwrap_or_default(),
-        eq_token: Default::default(),
+        eq_token: default(),
         ty: ty.into(),
-        semi_token: Default::default(),
+        semi_token: default(),
     })
 }
 
@@ -349,13 +349,13 @@ fn simple_const_item(
         attrs: vec![],
         vis: Visibility::Inherited,
         defaultness: None,
-        const_token: Default::default(),
+        const_token: default(),
         ident: Ident::new(name.as_ref(), Span::call_site()),
         generics: generics.unwrap_or_default(),
-        colon_token: Default::default(),
+        colon_token: default(),
         ty: ty.into(),
-        eq_token: Default::default(),
+        eq_token: default(),
         expr: value.into(),
-        semi_token: Default::default(),
+        semi_token: default(),
     })
 }

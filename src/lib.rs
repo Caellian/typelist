@@ -109,13 +109,21 @@ pub trait TypeList {
     {
         self.into_variants().into_iter()
     }
-
-    fn map_variants<F, R>(self, reducer: F) -> impl Iterator<Item = R>
+    #[inline]
+    fn fold_map<F, R>(self, reducer: F) -> impl Iterator<Item = R>
     where
         Self: Sized,
         F: Fn(Self::Variant) -> R,
     {
         self.into_variants().into_iter().map(reducer)
+    }
+    #[inline]
+    fn for_each<F>(self, consumer: F)
+    where
+        Self: Sized,
+        F: Fn(Self::Variant),
+    {
+        self.into_variants().into_iter().for_each(consumer)
     }
 }
 

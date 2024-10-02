@@ -6,13 +6,14 @@ mod types;
 mod util;
 mod value;
 mod variant;
+mod constraints;
 
 use implementation::*;
 use proc_macro2::Span;
 use syn::*;
 use types::TupleT;
 pub use util::ModuleVisibility;
-use util::{crate_visibility, use_module};
+use util::{crate_visibility, use_module, default};
 
 use crate::{mapping::MAPPING_MODULE, util::AddModule, variant::VARIANT_MODULE};
 
@@ -63,14 +64,14 @@ fn produce_items(options: Options) -> Vec<Item> {
             attrs: vec![],
             vis: match visibility {
                 ModuleVisibility::Private | ModuleVisibility::Flat => Visibility::Inherited,
-                ModuleVisibility::Public => Visibility::Public(Default::default()),
+                ModuleVisibility::Public => Visibility::Public(default()),
                 ModuleVisibility::Crate => crate_visibility(),
             },
             unsafety: None,
-            mod_token: Default::default(),
+            mod_token: default(),
             ident: Ident::new(&name, Span::call_site()),
-            content: Some((Default::default(), items)),
-            semi: Default::default(),
+            content: Some((default(), items)),
+            semi: default(),
         }));
         if visibility == ModuleVisibility::Flat {
             result.push(use_module(ModuleVisibility::Public, name))

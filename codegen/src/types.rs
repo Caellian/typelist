@@ -3,7 +3,7 @@ use std::ops::RangeBounds;
 
 use crate::{
     alphabet::{Alphabet, AlphabetGenerator},
-    util::{AsIdentPath as _, ident_ty},
+    util::{AsIdentPath as _, ident_ty, default},
 };
 use proc_macro2::Span;
 use syn::{punctuated::Punctuated, *};
@@ -71,7 +71,7 @@ impl<P: TuplePurity> TupleT<P> {
         where_top_level: Option<WhereClause>,
     ) -> Generics {
         Generics {
-            lt_token: Some(Default::default()),
+            lt_token: Some(default()),
             params: self
                 .names
                 .iter()
@@ -80,14 +80,14 @@ impl<P: TuplePurity> TupleT<P> {
                     GenericParam::Type(TypeParam {
                         attrs: vec![],
                         ident,
-                        colon_token: where_item.as_ref().map(|_| Default::default()),
+                        colon_token: where_item.as_ref().map(|_| default()),
                         bounds: where_item.clone().unwrap_or_default(),
                         eq_token: None,
                         default: None,
                     })
                 })
                 .collect(),
-            gt_token: Some(Default::default()),
+            gt_token: Some(default()),
             where_clause: where_top_level,
         }
     }
@@ -221,7 +221,7 @@ impl<P: TuplePurity> Clone for TupleT<P> {
 impl<P: TuplePurity> From<TupleT<P>> for Type {
     fn from(value: TupleT<P>) -> Self {
         Type::Tuple(TypeTuple {
-            paren_token: Default::default(),
+            paren_token: default(),
             elems: value.iter_types().collect(),
         })
     }

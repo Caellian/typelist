@@ -1,4 +1,6 @@
 pub mod variant {
+    #[allow(unused_imports)]
+    use super::*;
     pub enum Tuple0 {}
     #[repr(usize, C)]
     pub enum Tuple1<A> {
@@ -114,82 +116,13 @@ pub mod variant {
         Variant10(K),
         Variant11(L),
     }
-    #[repr(usize, C)]
-    pub enum Tuple13<A, B, C, D, E, F, G, H, I, J, K, L, M> {
-        Variant0(A),
-        Variant1(B),
-        Variant2(C),
-        Variant3(D),
-        Variant4(E),
-        Variant5(F),
-        Variant6(G),
-        Variant7(H),
-        Variant8(I),
-        Variant9(J),
-        Variant10(K),
-        Variant11(L),
-        Variant12(M),
-    }
-    #[repr(usize, C)]
-    pub enum Tuple14<A, B, C, D, E, F, G, H, I, J, K, L, M, N> {
-        Variant0(A),
-        Variant1(B),
-        Variant2(C),
-        Variant3(D),
-        Variant4(E),
-        Variant5(F),
-        Variant6(G),
-        Variant7(H),
-        Variant8(I),
-        Variant9(J),
-        Variant10(K),
-        Variant11(L),
-        Variant12(M),
-        Variant13(N),
-    }
-    #[repr(usize, C)]
-    pub enum Tuple15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> {
-        Variant0(A),
-        Variant1(B),
-        Variant2(C),
-        Variant3(D),
-        Variant4(E),
-        Variant5(F),
-        Variant6(G),
-        Variant7(H),
-        Variant8(I),
-        Variant9(J),
-        Variant10(K),
-        Variant11(L),
-        Variant12(M),
-        Variant13(N),
-        Variant14(O),
-    }
-    #[repr(usize, C)]
-    pub enum Tuple16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> {
-        Variant0(A),
-        Variant1(B),
-        Variant2(C),
-        Variant3(D),
-        Variant4(E),
-        Variant5(F),
-        Variant6(G),
-        Variant7(H),
-        Variant8(I),
-        Variant9(J),
-        Variant10(K),
-        Variant11(L),
-        Variant12(M),
-        Variant13(N),
-        Variant14(O),
-        Variant15(P),
-    }
 }
 use variant::*;
 pub mod mapping {
+    #[allow(unused_imports)]
+    use super::*;
     pub trait Map1<IA> {
         type Result0;
-        fn map_0(self, value: IA) -> Self::Result0;
         #[allow(clippy::type_complexity)]
         fn apply(self, value: (IA,)) -> (Self::Result0,);
     }
@@ -198,18 +131,33 @@ pub mod mapping {
         FA: FnMut(IA) -> OA,
     {
         type Result0 = OA;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
         fn apply(mut self, value: (IA,)) -> (Self::Result0,) {
             ((self.0)(value.0),)
+        }
+    }
+    pub trait HasMap1<IA, FA> {
+        type Result: HasElement<0>;
+        fn map(self, mapping: (FA,)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA,): Map1<IA, Result0 = <Self::Result as HasElement<0>>::Value>;
+    }
+    impl<IA, OA, FA> HasMap1<IA, FA> for (IA,)
+    where
+        FA: FnMut(IA) -> OA,
+    {
+        type Result = (OA,);
+        fn map(self, mapping: (FA,)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA,): Map1<IA, Result0 = OA>,
+        {
+            mapping.apply(self)
         }
     }
     pub trait Map2<IA, IB> {
         type Result0;
         type Result1;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
         #[allow(clippy::type_complexity)]
         fn apply(self, value: (IA, IB)) -> (Self::Result0, Self::Result1);
     }
@@ -220,23 +168,39 @@ pub mod mapping {
     {
         type Result0 = OA;
         type Result1 = OB;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
         fn apply(mut self, value: (IA, IB)) -> (Self::Result0, Self::Result1) {
             ((self.0)(value.0), (self.1)(value.1))
+        }
+    }
+    pub trait HasMap2<IA, IB, FA, FB> {
+        type Result: HasElement<0> + HasElement<1>;
+        fn map(self, mapping: (FA, FB)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB): Map2<IA, IB, Result0 = <Self::Result as HasElement<0>>::Value>,
+            Self::Result: HasElement<1>,
+            (FA, FB): Map2<IA, IB, Result1 = <Self::Result as HasElement<1>>::Value>;
+    }
+    impl<IA, IB, OA, OB, FA, FB> HasMap2<IA, IB, FA, FB> for (IA, IB)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+    {
+        type Result = (OA, OB);
+        fn map(self, mapping: (FA, FB)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB): Map2<IA, IB, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB): Map2<IA, IB, Result1 = OB>,
+        {
+            mapping.apply(self)
         }
     }
     pub trait Map3<IA, IB, IC> {
         type Result0;
         type Result1;
         type Result2;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -252,15 +216,6 @@ pub mod mapping {
         type Result0 = OA;
         type Result1 = OB;
         type Result2 = OC;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC),
@@ -268,15 +223,54 @@ pub mod mapping {
             ((self.0)(value.0), (self.1)(value.1), (self.2)(value.2))
         }
     }
+    pub trait HasMap3<IA, IB, IC, FA, FB, FC> {
+        type Result: HasElement<0> + HasElement<1> + HasElement<2>;
+        fn map(self, mapping: (FA, FB, FC)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+            ): Map3<IA, IB, IC, Result0 = <Self::Result as HasElement<0>>::Value>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+            ): Map3<IA, IB, IC, Result1 = <Self::Result as HasElement<1>>::Value>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+            ): Map3<IA, IB, IC, Result2 = <Self::Result as HasElement<2>>::Value>;
+    }
+    impl<IA, IB, IC, OA, OB, OC, FA, FB, FC> HasMap3<IA, IB, IC, FA, FB, FC>
+    for (IA, IB, IC)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+    {
+        type Result = (OA, OB, OC);
+        fn map(self, mapping: (FA, FB, FC)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB, FC): Map3<IA, IB, IC, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB, FC): Map3<IA, IB, IC, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (FA, FB, FC): Map3<IA, IB, IC, Result2 = OC>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map4<IA, IB, IC, ID> {
         type Result0;
         type Result1;
         type Result2;
         type Result3;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -295,23 +289,79 @@ pub mod mapping {
         type Result1 = OB;
         type Result2 = OC;
         type Result3 = OD;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID),
         ) -> (Self::Result0, Self::Result1, Self::Result2, Self::Result3) {
             ((self.0)(value.0), (self.1)(value.1), (self.2)(value.2), (self.3)(value.3))
+        }
+    }
+    pub trait HasMap4<IA, IB, IC, ID, FA, FB, FC, FD> {
+        type Result: HasElement<0> + HasElement<1> + HasElement<2> + HasElement<3>;
+        fn map(self, mapping: (FA, FB, FC, FD)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+            ): Map4<IA, IB, IC, ID, Result0 = <Self::Result as HasElement<0>>::Value>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+            ): Map4<IA, IB, IC, ID, Result1 = <Self::Result as HasElement<1>>::Value>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+            ): Map4<IA, IB, IC, ID, Result2 = <Self::Result as HasElement<2>>::Value>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+            ): Map4<IA, IB, IC, ID, Result3 = <Self::Result as HasElement<3>>::Value>;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        OA,
+        OB,
+        OC,
+        OD,
+        FA,
+        FB,
+        FC,
+        FD,
+    > HasMap4<IA, IB, IC, ID, FA, FB, FC, FD> for (IA, IB, IC, ID)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+    {
+        type Result = (OA, OB, OC, OD);
+        fn map(self, mapping: (FA, FB, FC, FD)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB, FC, FD): Map4<IA, IB, IC, ID, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB, FC, FD): Map4<IA, IB, IC, ID, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (FA, FB, FC, FD): Map4<IA, IB, IC, ID, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (FA, FB, FC, FD): Map4<IA, IB, IC, ID, Result3 = OD>,
+        {
+            mapping.apply(self)
         }
     }
     pub trait Map5<IA, IB, IC, ID, IE> {
@@ -320,11 +370,6 @@ pub mod mapping {
         type Result2;
         type Result3;
         type Result4;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -360,21 +405,6 @@ pub mod mapping {
         type Result2 = OC;
         type Result3 = OD;
         type Result4 = OE;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE),
@@ -394,6 +424,131 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap5<IA, IB, IC, ID, IE, FA, FB, FC, FD, FE> {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+            ): Map5<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+            ): Map5<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+            ): Map5<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+            ): Map5<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+            ): Map5<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+    > HasMap5<IA, IB, IC, ID, IE, FA, FB, FC, FD, FE> for (IA, IB, IC, ID, IE)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+    {
+        type Result = (OA, OB, OC, OD, OE);
+        fn map(self, mapping: (FA, FB, FC, FD, FE)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB, FC, FD, FE): Map5<IA, IB, IC, ID, IE, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB, FC, FD, FE): Map5<IA, IB, IC, ID, IE, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (FA, FB, FC, FD, FE): Map5<IA, IB, IC, ID, IE, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (FA, FB, FC, FD, FE): Map5<IA, IB, IC, ID, IE, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (FA, FB, FC, FD, FE): Map5<IA, IB, IC, ID, IE, Result4 = OE>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map6<IA, IB, IC, ID, IE, IF> {
         type Result0;
         type Result1;
@@ -401,12 +556,6 @@ pub mod mapping {
         type Result3;
         type Result4;
         type Result5;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -454,24 +603,6 @@ pub mod mapping {
         type Result3 = OD;
         type Result4 = OE;
         type Result5 = OF;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF),
@@ -493,6 +624,166 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap6<IA, IB, IC, ID, IE, IF, FA, FB, FC, FD, FE, FF> {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+            ): Map6<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+    > HasMap6<IA, IB, IC, ID, IE, IF, FA, FB, FC, FD, FE, FF>
+    for (IA, IB, IC, ID, IE, IF)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF);
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (FA, FB, FC, FD, FE, FF): Map6<IA, IB, IC, ID, IE, IF, Result5 = OF>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map7<IA, IB, IC, ID, IE, IF, IG> {
         type Result0;
         type Result1;
@@ -501,13 +792,6 @@ pub mod mapping {
         type Result4;
         type Result5;
         type Result6;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -561,27 +845,6 @@ pub mod mapping {
         type Result4 = OE;
         type Result5 = OF;
         type Result6 = OG;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG),
@@ -605,6 +868,204 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap7<IA, IB, IC, ID, IE, IF, IG, FA, FB, FC, FD, FE, FF, FG> {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+            ): Map7<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        OG,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+    > HasMap7<IA, IB, IC, ID, IE, IF, IG, FA, FB, FC, FD, FE, FF, FG>
+    for (IA, IB, IC, ID, IE, IF, IG)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+        FG: FnMut(IG) -> OG,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF, OG);
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (FA, FB, FC, FD, FE, FF, FG): Map7<IA, IB, IC, ID, IE, IF, IG, Result6 = OG>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map8<IA, IB, IC, ID, IE, IF, IG, IH> {
         type Result0;
         type Result1;
@@ -614,14 +1075,6 @@ pub mod mapping {
         type Result5;
         type Result6;
         type Result7;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -681,30 +1134,6 @@ pub mod mapping {
         type Result5 = OF;
         type Result6 = OG;
         type Result7 = OH;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG, IH),
@@ -730,6 +1159,318 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap8<IA, IB, IC, ID, IE, IF, IG, IH, FA, FB, FC, FD, FE, FF, FG, FH> {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>
+            + HasElement<7>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                Result7 = <Self::Result as HasElement<7>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        OG,
+        OH,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+    > HasMap8<IA, IB, IC, ID, IE, IF, IG, IH, FA, FB, FC, FD, FE, FF, FG, FH>
+    for (IA, IB, IC, ID, IE, IF, IG, IH)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+        FG: FnMut(IG) -> OG,
+        FH: FnMut(IH) -> OH,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF, OG, OH);
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result6 = OG>,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+            ): Map8<IA, IB, IC, ID, IE, IF, IG, IH, Result7 = OH>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map9<IA, IB, IC, ID, IE, IF, IG, IH, II> {
         type Result0;
         type Result1;
@@ -740,15 +1481,6 @@ pub mod mapping {
         type Result6;
         type Result7;
         type Result8;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -814,33 +1546,6 @@ pub mod mapping {
         type Result6 = OG;
         type Result7 = OH;
         type Result8 = OI;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG, IH, II),
@@ -868,6 +1573,401 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap9<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+    > {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>
+            + HasElement<7>
+            + HasElement<8>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result7 = <Self::Result as HasElement<7>>::Value,
+            >,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                Result8 = <Self::Result as HasElement<8>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        OG,
+        OH,
+        OI,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+    > HasMap9<IA, IB, IC, ID, IE, IF, IG, IH, II, FA, FB, FC, FD, FE, FF, FG, FH, FI>
+    for (IA, IB, IC, ID, IE, IF, IG, IH, II)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+        FG: FnMut(IG) -> OG,
+        FH: FnMut(IH) -> OH,
+        FI: FnMut(II) -> OI,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF, OG, OH, OI);
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result6 = OG>,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result7 = OH>,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+            ): Map9<IA, IB, IC, ID, IE, IF, IG, IH, II, Result8 = OI>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ> {
         type Result0;
         type Result1;
@@ -879,16 +1979,6 @@ pub mod mapping {
         type Result7;
         type Result8;
         type Result9;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -961,36 +2051,6 @@ pub mod mapping {
         type Result7 = OH;
         type Result8 = OI;
         type Result9 = OJ;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ),
@@ -1020,6 +2080,493 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap10<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+    > {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>
+            + HasElement<7>
+            + HasElement<8>
+            + HasElement<9>;
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result7 = <Self::Result as HasElement<7>>::Value,
+            >,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result8 = <Self::Result as HasElement<8>>::Value,
+            >,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                Result9 = <Self::Result as HasElement<9>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        OG,
+        OH,
+        OI,
+        OJ,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+    > HasMap10<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+    > for (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+        FG: FnMut(IG) -> OG,
+        FH: FnMut(IH) -> OH,
+        FI: FnMut(II) -> OI,
+        FJ: FnMut(IJ) -> OJ,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF, OG, OH, OI, OJ);
+        fn map(self, mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ)) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result6 = OG>,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result7 = OH>,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result8 = OI>,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+            ): Map10<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, Result9 = OJ>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK> {
         type Result0;
         type Result1;
@@ -1032,17 +2579,6 @@ pub mod mapping {
         type Result8;
         type Result9;
         type Result10;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -1121,39 +2657,6 @@ pub mod mapping {
         type Result8 = OI;
         type Result9 = OJ;
         type Result10 = OK;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK),
@@ -1185,6 +2688,579 @@ pub mod mapping {
             )
         }
     }
+    pub trait HasMap11<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        IK,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+        FK,
+    > {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>
+            + HasElement<7>
+            + HasElement<8>
+            + HasElement<9>
+            + HasElement<10>;
+        fn map(
+            self,
+            mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK),
+        ) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result7 = <Self::Result as HasElement<7>>::Value,
+            >,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result8 = <Self::Result as HasElement<8>>::Value,
+            >,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result9 = <Self::Result as HasElement<9>>::Value,
+            >,
+            Self::Result: HasElement<10>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                Result10 = <Self::Result as HasElement<10>>::Value,
+            >;
+    }
+    impl<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        IK,
+        OA,
+        OB,
+        OC,
+        OD,
+        OE,
+        OF,
+        OG,
+        OH,
+        OI,
+        OJ,
+        OK,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+        FK,
+    > HasMap11<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        IK,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+        FK,
+    > for (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK)
+    where
+        FA: FnMut(IA) -> OA,
+        FB: FnMut(IB) -> OB,
+        FC: FnMut(IC) -> OC,
+        FD: FnMut(ID) -> OD,
+        FE: FnMut(IE) -> OE,
+        FF: FnMut(IF) -> OF,
+        FG: FnMut(IG) -> OG,
+        FH: FnMut(IH) -> OH,
+        FI: FnMut(II) -> OI,
+        FJ: FnMut(IJ) -> OJ,
+        FK: FnMut(IK) -> OK,
+    {
+        type Result = (OA, OB, OC, OD, OE, OF, OG, OH, OI, OJ, OK);
+        fn map(
+            self,
+            mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK),
+        ) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result0 = OA>,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result6 = OG>,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result7 = OH>,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result8 = OI>,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result9 = OJ>,
+            Self::Result: HasElement<10>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+            ): Map11<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, Result10 = OK>,
+        {
+            mapping.apply(self)
+        }
+    }
     pub trait Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL> {
         type Result0;
         type Result1;
@@ -1198,18 +3274,6 @@ pub mod mapping {
         type Result9;
         type Result10;
         type Result11;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
-        fn map_11(self, value: IL) -> Self::Result11;
         #[allow(clippy::type_complexity)]
         fn apply(
             self,
@@ -1294,42 +3358,6 @@ pub mod mapping {
         type Result9 = OJ;
         type Result10 = OK;
         type Result11 = OL;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
-        fn map_11(mut self, value: IL) -> Self::Result11 {
-            (self.11)(value)
-        }
         fn apply(
             mut self,
             value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL),
@@ -1363,52 +3391,397 @@ pub mod mapping {
             )
         }
     }
-    pub trait Map13<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM> {
-        type Result0;
-        type Result1;
-        type Result2;
-        type Result3;
-        type Result4;
-        type Result5;
-        type Result6;
-        type Result7;
-        type Result8;
-        type Result9;
-        type Result10;
-        type Result11;
-        type Result12;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
-        fn map_11(self, value: IL) -> Self::Result11;
-        fn map_12(self, value: IM) -> Self::Result12;
-        #[allow(clippy::type_complexity)]
-        fn apply(
+    pub trait HasMap12<
+        IA,
+        IB,
+        IC,
+        ID,
+        IE,
+        IF,
+        IG,
+        IH,
+        II,
+        IJ,
+        IK,
+        IL,
+        FA,
+        FB,
+        FC,
+        FD,
+        FE,
+        FF,
+        FG,
+        FH,
+        FI,
+        FJ,
+        FK,
+        FL,
+    > {
+        type Result: HasElement<0>
+            + HasElement<1>
+            + HasElement<2>
+            + HasElement<3>
+            + HasElement<4>
+            + HasElement<5>
+            + HasElement<6>
+            + HasElement<7>
+            + HasElement<8>
+            + HasElement<9>
+            + HasElement<10>
+            + HasElement<11>;
+        fn map(
             self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-        );
+            mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL),
+        ) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result0 = <Self::Result as HasElement<0>>::Value,
+            >,
+            Self::Result: HasElement<1>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result1 = <Self::Result as HasElement<1>>::Value,
+            >,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result2 = <Self::Result as HasElement<2>>::Value,
+            >,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result3 = <Self::Result as HasElement<3>>::Value,
+            >,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result4 = <Self::Result as HasElement<4>>::Value,
+            >,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result5 = <Self::Result as HasElement<5>>::Value,
+            >,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result6 = <Self::Result as HasElement<6>>::Value,
+            >,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result7 = <Self::Result as HasElement<7>>::Value,
+            >,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result8 = <Self::Result as HasElement<8>>::Value,
+            >,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result9 = <Self::Result as HasElement<9>>::Value,
+            >,
+            Self::Result: HasElement<10>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result10 = <Self::Result as HasElement<10>>::Value,
+            >,
+            Self::Result: HasElement<11>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<
+                IA,
+                IB,
+                IC,
+                ID,
+                IE,
+                IF,
+                IG,
+                IH,
+                II,
+                IJ,
+                IK,
+                IL,
+                Result11 = <Self::Result as HasElement<11>>::Value,
+            >;
     }
     impl<
         IA,
@@ -1423,7 +3796,6 @@ pub mod mapping {
         IJ,
         IK,
         IL,
-        IM,
         OA,
         OB,
         OC,
@@ -1436,7 +3808,6 @@ pub mod mapping {
         OJ,
         OK,
         OL,
-        OM,
         FA,
         FB,
         FC,
@@ -1449,162 +3820,7 @@ pub mod mapping {
         FJ,
         FK,
         FL,
-        FM,
-    > Map13<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM>
-    for (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL, FM)
-    where
-        FA: FnMut(IA) -> OA,
-        FB: FnMut(IB) -> OB,
-        FC: FnMut(IC) -> OC,
-        FD: FnMut(ID) -> OD,
-        FE: FnMut(IE) -> OE,
-        FF: FnMut(IF) -> OF,
-        FG: FnMut(IG) -> OG,
-        FH: FnMut(IH) -> OH,
-        FI: FnMut(II) -> OI,
-        FJ: FnMut(IJ) -> OJ,
-        FK: FnMut(IK) -> OK,
-        FL: FnMut(IL) -> OL,
-        FM: FnMut(IM) -> OM,
-    {
-        type Result0 = OA;
-        type Result1 = OB;
-        type Result2 = OC;
-        type Result3 = OD;
-        type Result4 = OE;
-        type Result5 = OF;
-        type Result6 = OG;
-        type Result7 = OH;
-        type Result8 = OI;
-        type Result9 = OJ;
-        type Result10 = OK;
-        type Result11 = OL;
-        type Result12 = OM;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
-        fn map_11(mut self, value: IL) -> Self::Result11 {
-            (self.11)(value)
-        }
-        fn map_12(mut self, value: IM) -> Self::Result12 {
-            (self.12)(value)
-        }
-        fn apply(
-            mut self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-        ) {
-            (
-                (self.0)(value.0),
-                (self.1)(value.1),
-                (self.2)(value.2),
-                (self.3)(value.3),
-                (self.4)(value.4),
-                (self.5)(value.5),
-                (self.6)(value.6),
-                (self.7)(value.7),
-                (self.8)(value.8),
-                (self.9)(value.9),
-                (self.10)(value.10),
-                (self.11)(value.11),
-                (self.12)(value.12),
-            )
-        }
-    }
-    pub trait Map14<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN> {
-        type Result0;
-        type Result1;
-        type Result2;
-        type Result3;
-        type Result4;
-        type Result5;
-        type Result6;
-        type Result7;
-        type Result8;
-        type Result9;
-        type Result10;
-        type Result11;
-        type Result12;
-        type Result13;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
-        fn map_11(self, value: IL) -> Self::Result11;
-        fn map_12(self, value: IM) -> Self::Result12;
-        fn map_13(self, value: IN) -> Self::Result13;
-        #[allow(clippy::type_complexity)]
-        fn apply(
-            self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-        );
-    }
-    impl<
+    > HasMap12<
         IA,
         IB,
         IC,
@@ -1617,22 +3833,6 @@ pub mod mapping {
         IJ,
         IK,
         IL,
-        IM,
-        IN,
-        OA,
-        OB,
-        OC,
-        OD,
-        OE,
-        OF,
-        OG,
-        OH,
-        OI,
-        OJ,
-        OK,
-        OL,
-        OM,
-        ON,
         FA,
         FB,
         FC,
@@ -1645,10 +3845,7 @@ pub mod mapping {
         FJ,
         FK,
         FL,
-        FM,
-        FN,
-    > Map14<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN>
-    for (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL, FM, FN)
+    > for (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL)
     where
         FA: FnMut(IA) -> OA,
         FB: FnMut(IB) -> OB,
@@ -1662,547 +3859,195 @@ pub mod mapping {
         FJ: FnMut(IJ) -> OJ,
         FK: FnMut(IK) -> OK,
         FL: FnMut(IL) -> OL,
-        FM: FnMut(IM) -> OM,
-        FN: FnMut(IN) -> ON,
     {
-        type Result0 = OA;
-        type Result1 = OB;
-        type Result2 = OC;
-        type Result3 = OD;
-        type Result4 = OE;
-        type Result5 = OF;
-        type Result6 = OG;
-        type Result7 = OH;
-        type Result8 = OI;
-        type Result9 = OJ;
-        type Result10 = OK;
-        type Result11 = OL;
-        type Result12 = OM;
-        type Result13 = ON;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
-        fn map_11(mut self, value: IL) -> Self::Result11 {
-            (self.11)(value)
-        }
-        fn map_12(mut self, value: IM) -> Self::Result12 {
-            (self.12)(value)
-        }
-        fn map_13(mut self, value: IN) -> Self::Result13 {
-            (self.13)(value)
-        }
-        fn apply(
-            mut self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-        ) {
-            (
-                (self.0)(value.0),
-                (self.1)(value.1),
-                (self.2)(value.2),
-                (self.3)(value.3),
-                (self.4)(value.4),
-                (self.5)(value.5),
-                (self.6)(value.6),
-                (self.7)(value.7),
-                (self.8)(value.8),
-                (self.9)(value.9),
-                (self.10)(value.10),
-                (self.11)(value.11),
-                (self.12)(value.12),
-                (self.13)(value.13),
-            )
-        }
-    }
-    pub trait Map15<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO> {
-        type Result0;
-        type Result1;
-        type Result2;
-        type Result3;
-        type Result4;
-        type Result5;
-        type Result6;
-        type Result7;
-        type Result8;
-        type Result9;
-        type Result10;
-        type Result11;
-        type Result12;
-        type Result13;
-        type Result14;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
-        fn map_11(self, value: IL) -> Self::Result11;
-        fn map_12(self, value: IM) -> Self::Result12;
-        fn map_13(self, value: IN) -> Self::Result13;
-        fn map_14(self, value: IO) -> Self::Result14;
-        #[allow(clippy::type_complexity)]
-        fn apply(
+        type Result = (OA, OB, OC, OD, OE, OF, OG, OH, OI, OJ, OK, OL);
+        fn map(
             self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-            Self::Result14,
-        );
-    }
-    impl<
-        IA,
-        IB,
-        IC,
-        ID,
-        IE,
-        IF,
-        IG,
-        IH,
-        II,
-        IJ,
-        IK,
-        IL,
-        IM,
-        IN,
-        IO,
-        OA,
-        OB,
-        OC,
-        OD,
-        OE,
-        OF,
-        OG,
-        OH,
-        OI,
-        OJ,
-        OK,
-        OL,
-        OM,
-        ON,
-        OO,
-        FA,
-        FB,
-        FC,
-        FD,
-        FE,
-        FF,
-        FG,
-        FH,
-        FI,
-        FJ,
-        FK,
-        FL,
-        FM,
-        FN,
-        FO,
-    > Map15<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO>
-    for (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL, FM, FN, FO)
-    where
-        FA: FnMut(IA) -> OA,
-        FB: FnMut(IB) -> OB,
-        FC: FnMut(IC) -> OC,
-        FD: FnMut(ID) -> OD,
-        FE: FnMut(IE) -> OE,
-        FF: FnMut(IF) -> OF,
-        FG: FnMut(IG) -> OG,
-        FH: FnMut(IH) -> OH,
-        FI: FnMut(II) -> OI,
-        FJ: FnMut(IJ) -> OJ,
-        FK: FnMut(IK) -> OK,
-        FL: FnMut(IL) -> OL,
-        FM: FnMut(IM) -> OM,
-        FN: FnMut(IN) -> ON,
-        FO: FnMut(IO) -> OO,
-    {
-        type Result0 = OA;
-        type Result1 = OB;
-        type Result2 = OC;
-        type Result3 = OD;
-        type Result4 = OE;
-        type Result5 = OF;
-        type Result6 = OG;
-        type Result7 = OH;
-        type Result8 = OI;
-        type Result9 = OJ;
-        type Result10 = OK;
-        type Result11 = OL;
-        type Result12 = OM;
-        type Result13 = ON;
-        type Result14 = OO;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
-        fn map_11(mut self, value: IL) -> Self::Result11 {
-            (self.11)(value)
-        }
-        fn map_12(mut self, value: IM) -> Self::Result12 {
-            (self.12)(value)
-        }
-        fn map_13(mut self, value: IN) -> Self::Result13 {
-            (self.13)(value)
-        }
-        fn map_14(mut self, value: IO) -> Self::Result14 {
-            (self.14)(value)
-        }
-        fn apply(
-            mut self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-            Self::Result14,
-        ) {
+            mapping: (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL),
+        ) -> Self::Result
+        where
+            Self::Result: HasElement<0>,
             (
-                (self.0)(value.0),
-                (self.1)(value.1),
-                (self.2)(value.2),
-                (self.3)(value.3),
-                (self.4)(value.4),
-                (self.5)(value.5),
-                (self.6)(value.6),
-                (self.7)(value.7),
-                (self.8)(value.8),
-                (self.9)(value.9),
-                (self.10)(value.10),
-                (self.11)(value.11),
-                (self.12)(value.12),
-                (self.13)(value.13),
-                (self.14)(value.14),
-            )
-        }
-    }
-    pub trait Map16<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO, IP> {
-        type Result0;
-        type Result1;
-        type Result2;
-        type Result3;
-        type Result4;
-        type Result5;
-        type Result6;
-        type Result7;
-        type Result8;
-        type Result9;
-        type Result10;
-        type Result11;
-        type Result12;
-        type Result13;
-        type Result14;
-        type Result15;
-        fn map_0(self, value: IA) -> Self::Result0;
-        fn map_1(self, value: IB) -> Self::Result1;
-        fn map_2(self, value: IC) -> Self::Result2;
-        fn map_3(self, value: ID) -> Self::Result3;
-        fn map_4(self, value: IE) -> Self::Result4;
-        fn map_5(self, value: IF) -> Self::Result5;
-        fn map_6(self, value: IG) -> Self::Result6;
-        fn map_7(self, value: IH) -> Self::Result7;
-        fn map_8(self, value: II) -> Self::Result8;
-        fn map_9(self, value: IJ) -> Self::Result9;
-        fn map_10(self, value: IK) -> Self::Result10;
-        fn map_11(self, value: IL) -> Self::Result11;
-        fn map_12(self, value: IM) -> Self::Result12;
-        fn map_13(self, value: IN) -> Self::Result13;
-        fn map_14(self, value: IO) -> Self::Result14;
-        fn map_15(self, value: IP) -> Self::Result15;
-        #[allow(clippy::type_complexity)]
-        fn apply(
-            self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO, IP),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-            Self::Result14,
-            Self::Result15,
-        );
-    }
-    impl<
-        IA,
-        IB,
-        IC,
-        ID,
-        IE,
-        IF,
-        IG,
-        IH,
-        II,
-        IJ,
-        IK,
-        IL,
-        IM,
-        IN,
-        IO,
-        IP,
-        OA,
-        OB,
-        OC,
-        OD,
-        OE,
-        OF,
-        OG,
-        OH,
-        OI,
-        OJ,
-        OK,
-        OL,
-        OM,
-        ON,
-        OO,
-        OP,
-        FA,
-        FB,
-        FC,
-        FD,
-        FE,
-        FF,
-        FG,
-        FH,
-        FI,
-        FJ,
-        FK,
-        FL,
-        FM,
-        FN,
-        FO,
-        FP,
-    > Map16<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO, IP>
-    for (FA, FB, FC, FD, FE, FF, FG, FH, FI, FJ, FK, FL, FM, FN, FO, FP)
-    where
-        FA: FnMut(IA) -> OA,
-        FB: FnMut(IB) -> OB,
-        FC: FnMut(IC) -> OC,
-        FD: FnMut(ID) -> OD,
-        FE: FnMut(IE) -> OE,
-        FF: FnMut(IF) -> OF,
-        FG: FnMut(IG) -> OG,
-        FH: FnMut(IH) -> OH,
-        FI: FnMut(II) -> OI,
-        FJ: FnMut(IJ) -> OJ,
-        FK: FnMut(IK) -> OK,
-        FL: FnMut(IL) -> OL,
-        FM: FnMut(IM) -> OM,
-        FN: FnMut(IN) -> ON,
-        FO: FnMut(IO) -> OO,
-        FP: FnMut(IP) -> OP,
-    {
-        type Result0 = OA;
-        type Result1 = OB;
-        type Result2 = OC;
-        type Result3 = OD;
-        type Result4 = OE;
-        type Result5 = OF;
-        type Result6 = OG;
-        type Result7 = OH;
-        type Result8 = OI;
-        type Result9 = OJ;
-        type Result10 = OK;
-        type Result11 = OL;
-        type Result12 = OM;
-        type Result13 = ON;
-        type Result14 = OO;
-        type Result15 = OP;
-        fn map_0(mut self, value: IA) -> Self::Result0 {
-            (self.0)(value)
-        }
-        fn map_1(mut self, value: IB) -> Self::Result1 {
-            (self.1)(value)
-        }
-        fn map_2(mut self, value: IC) -> Self::Result2 {
-            (self.2)(value)
-        }
-        fn map_3(mut self, value: ID) -> Self::Result3 {
-            (self.3)(value)
-        }
-        fn map_4(mut self, value: IE) -> Self::Result4 {
-            (self.4)(value)
-        }
-        fn map_5(mut self, value: IF) -> Self::Result5 {
-            (self.5)(value)
-        }
-        fn map_6(mut self, value: IG) -> Self::Result6 {
-            (self.6)(value)
-        }
-        fn map_7(mut self, value: IH) -> Self::Result7 {
-            (self.7)(value)
-        }
-        fn map_8(mut self, value: II) -> Self::Result8 {
-            (self.8)(value)
-        }
-        fn map_9(mut self, value: IJ) -> Self::Result9 {
-            (self.9)(value)
-        }
-        fn map_10(mut self, value: IK) -> Self::Result10 {
-            (self.10)(value)
-        }
-        fn map_11(mut self, value: IL) -> Self::Result11 {
-            (self.11)(value)
-        }
-        fn map_12(mut self, value: IM) -> Self::Result12 {
-            (self.12)(value)
-        }
-        fn map_13(mut self, value: IN) -> Self::Result13 {
-            (self.13)(value)
-        }
-        fn map_14(mut self, value: IO) -> Self::Result14 {
-            (self.14)(value)
-        }
-        fn map_15(mut self, value: IP) -> Self::Result15 {
-            (self.15)(value)
-        }
-        fn apply(
-            mut self,
-            value: (IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, IM, IN, IO, IP),
-        ) -> (
-            Self::Result0,
-            Self::Result1,
-            Self::Result2,
-            Self::Result3,
-            Self::Result4,
-            Self::Result5,
-            Self::Result6,
-            Self::Result7,
-            Self::Result8,
-            Self::Result9,
-            Self::Result10,
-            Self::Result11,
-            Self::Result12,
-            Self::Result13,
-            Self::Result14,
-            Self::Result15,
-        ) {
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result0 = OA>,
+            Self::Result: HasElement<1>,
             (
-                (self.0)(value.0),
-                (self.1)(value.1),
-                (self.2)(value.2),
-                (self.3)(value.3),
-                (self.4)(value.4),
-                (self.5)(value.5),
-                (self.6)(value.6),
-                (self.7)(value.7),
-                (self.8)(value.8),
-                (self.9)(value.9),
-                (self.10)(value.10),
-                (self.11)(value.11),
-                (self.12)(value.12),
-                (self.13)(value.13),
-                (self.14)(value.14),
-                (self.15)(value.15),
-            )
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result1 = OB>,
+            Self::Result: HasElement<2>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result2 = OC>,
+            Self::Result: HasElement<3>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result3 = OD>,
+            Self::Result: HasElement<4>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result4 = OE>,
+            Self::Result: HasElement<5>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result5 = OF>,
+            Self::Result: HasElement<6>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result6 = OG>,
+            Self::Result: HasElement<7>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result7 = OH>,
+            Self::Result: HasElement<8>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result8 = OI>,
+            Self::Result: HasElement<9>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result9 = OJ>,
+            Self::Result: HasElement<10>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result10 = OK>,
+            Self::Result: HasElement<11>,
+            (
+                FA,
+                FB,
+                FC,
+                FD,
+                FE,
+                FF,
+                FG,
+                FH,
+                FI,
+                FJ,
+                FK,
+                FL,
+            ): Map12<IA, IB, IC, ID, IE, IF, IG, IH, II, IJ, IK, IL, Result11 = OL>,
+        {
+            mapping.apply(self)
         }
     }
 }
@@ -4125,2228 +5970,6 @@ for (A, B, C, D, E, F, G, H, I, J, K, L) {
                 self.8,
                 self.9,
                 self.10,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> TypeList
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Head = A;
-    type Tail = (B, C, D, E, F, G, H, I, J, K, L, M);
-    type First = A;
-    type Last = M;
-    type Reverse = (M, L, K, J, I, H, G, F, E, D, C, B, A);
-    type PushFront<Pushed> = (Pushed, A, B, C, D, E, F, G, H, I, J, K, L, M);
-    type PushBack<Pushed> = (A, B, C, D, E, F, G, H, I, J, K, L, M, Pushed);
-    type Variant = Tuple13<A, B, C, D, E, F, G, H, I, J, K, L, M>;
-    type Variants = [Self::Variant; 13];
-    const LEN: usize = 13;
-    const IS_EMPTY: bool = false;
-    fn push_back<Parsed>(self, value: Parsed) -> Self::PushBack<Parsed> {
-        (
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            value,
-        )
-    }
-    fn push_front<Parsed>(self, value: Parsed) -> Self::PushFront<Parsed> {
-        (
-            value,
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-        )
-    }
-    fn reverse(self) -> Self::Reverse {
-        (
-            self.12,
-            self.11,
-            self.10,
-            self.9,
-            self.8,
-            self.7,
-            self.6,
-            self.5,
-            self.4,
-            self.3,
-            self.2,
-            self.1,
-            self.0,
-        )
-    }
-    fn into_variants(self) -> Self::Variants {
-        [
-            Tuple13::Variant0(self.0),
-            Tuple13::Variant1(self.1),
-            Tuple13::Variant2(self.2),
-            Tuple13::Variant3(self.3),
-            Tuple13::Variant4(self.4),
-            Tuple13::Variant5(self.5),
-            Tuple13::Variant6(self.6),
-            Tuple13::Variant7(self.7),
-            Tuple13::Variant8(self.8),
-            Tuple13::Variant9(self.9),
-            Tuple13::Variant10(self.10),
-            Tuple13::Variant11(self.11),
-            Tuple13::Variant12(self.12),
-        ]
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> NonEmpty
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type LTail = (A, B, C, D, E, F, G, H, I, J, K, L);
-    fn first(&self) -> &Self::First {
-        &self.0
-    }
-    fn last(&self) -> &Self::Last {
-        &self.12
-    }
-    fn pop_back(self) -> (Self::Last, Self::LTail) {
-        (
-            self.12,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-            ),
-        )
-    }
-    fn pop_front(self) -> (Self::Head, Self::Tail) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<0>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = A;
-    type Other = (B, C, D, E, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.0
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<1>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = B;
-    type Other = (A, C, D, E, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.1
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.1,
-            (
-                self.0,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<2>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = C;
-    type Other = (A, B, D, E, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.2
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.2,
-            (
-                self.0,
-                self.1,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<3>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = D;
-    type Other = (A, B, C, E, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.3
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.3,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<4>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = E;
-    type Other = (A, B, C, D, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.4
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.4,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<5>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = F;
-    type Other = (A, B, C, D, E, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.5
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.5,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<6>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = G;
-    type Other = (A, B, C, D, E, F, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.6
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.6,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<7>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = H;
-    type Other = (A, B, C, D, E, F, G, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.7
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.7,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<8>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = I;
-    type Other = (A, B, C, D, E, F, G, H, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.8
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.8,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<9>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = J;
-    type Other = (A, B, C, D, E, F, G, H, I, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.9
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.9,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<10>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = K;
-    type Other = (A, B, C, D, E, F, G, H, I, J, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.10
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.10,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<11>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = L;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, M);
-    fn get(&self) -> &Self::Value {
-        &self.11
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.11,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> HasElement<12>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Value = M;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L);
-    fn get(&self) -> &Self::Value {
-        &self.12
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.12,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> TypeList
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Head = A;
-    type Tail = (B, C, D, E, F, G, H, I, J, K, L, M, N);
-    type First = A;
-    type Last = N;
-    type Reverse = (N, M, L, K, J, I, H, G, F, E, D, C, B, A);
-    type PushFront<Pushed> = (Pushed, A, B, C, D, E, F, G, H, I, J, K, L, M, N);
-    type PushBack<Pushed> = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, Pushed);
-    type Variant = Tuple14<A, B, C, D, E, F, G, H, I, J, K, L, M, N>;
-    type Variants = [Self::Variant; 14];
-    const LEN: usize = 14;
-    const IS_EMPTY: bool = false;
-    fn push_back<Parsed>(self, value: Parsed) -> Self::PushBack<Parsed> {
-        (
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-            value,
-        )
-    }
-    fn push_front<Parsed>(self, value: Parsed) -> Self::PushFront<Parsed> {
-        (
-            value,
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-        )
-    }
-    fn reverse(self) -> Self::Reverse {
-        (
-            self.13,
-            self.12,
-            self.11,
-            self.10,
-            self.9,
-            self.8,
-            self.7,
-            self.6,
-            self.5,
-            self.4,
-            self.3,
-            self.2,
-            self.1,
-            self.0,
-        )
-    }
-    fn into_variants(self) -> Self::Variants {
-        [
-            Tuple14::Variant0(self.0),
-            Tuple14::Variant1(self.1),
-            Tuple14::Variant2(self.2),
-            Tuple14::Variant3(self.3),
-            Tuple14::Variant4(self.4),
-            Tuple14::Variant5(self.5),
-            Tuple14::Variant6(self.6),
-            Tuple14::Variant7(self.7),
-            Tuple14::Variant8(self.8),
-            Tuple14::Variant9(self.9),
-            Tuple14::Variant10(self.10),
-            Tuple14::Variant11(self.11),
-            Tuple14::Variant12(self.12),
-            Tuple14::Variant13(self.13),
-        ]
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> NonEmpty
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type LTail = (A, B, C, D, E, F, G, H, I, J, K, L, M);
-    fn first(&self) -> &Self::First {
-        &self.0
-    }
-    fn last(&self) -> &Self::Last {
-        &self.13
-    }
-    fn pop_back(self) -> (Self::Last, Self::LTail) {
-        (
-            self.13,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-    fn pop_front(self) -> (Self::Head, Self::Tail) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<0>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = A;
-    type Other = (B, C, D, E, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.0
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<1>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = B;
-    type Other = (A, C, D, E, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.1
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.1,
-            (
-                self.0,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<2>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = C;
-    type Other = (A, B, D, E, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.2
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.2,
-            (
-                self.0,
-                self.1,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<3>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = D;
-    type Other = (A, B, C, E, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.3
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.3,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<4>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = E;
-    type Other = (A, B, C, D, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.4
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.4,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<5>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = F;
-    type Other = (A, B, C, D, E, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.5
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.5,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<6>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = G;
-    type Other = (A, B, C, D, E, F, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.6
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.6,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<7>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = H;
-    type Other = (A, B, C, D, E, F, G, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.7
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.7,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<8>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = I;
-    type Other = (A, B, C, D, E, F, G, H, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.8
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.8,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<9>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = J;
-    type Other = (A, B, C, D, E, F, G, H, I, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.9
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.9,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<10>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = K;
-    type Other = (A, B, C, D, E, F, G, H, I, J, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.10
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.10,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<11>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = L;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.11
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.11,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<12>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = M;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, N);
-    fn get(&self) -> &Self::Value {
-        &self.12
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.12,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> HasElement<13>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Value = N;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M);
-    fn get(&self) -> &Self::Value {
-        &self.13
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.13,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> TypeList
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Head = A;
-    type Tail = (B, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    type First = A;
-    type Last = O;
-    type Reverse = (O, N, M, L, K, J, I, H, G, F, E, D, C, B, A);
-    type PushFront<Pushed> = (Pushed, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    type PushBack<Pushed> = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Pushed);
-    type Variant = Tuple15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>;
-    type Variants = [Self::Variant; 15];
-    const LEN: usize = 15;
-    const IS_EMPTY: bool = false;
-    fn push_back<Parsed>(self, value: Parsed) -> Self::PushBack<Parsed> {
-        (
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-            self.14,
-            value,
-        )
-    }
-    fn push_front<Parsed>(self, value: Parsed) -> Self::PushFront<Parsed> {
-        (
-            value,
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-            self.14,
-        )
-    }
-    fn reverse(self) -> Self::Reverse {
-        (
-            self.14,
-            self.13,
-            self.12,
-            self.11,
-            self.10,
-            self.9,
-            self.8,
-            self.7,
-            self.6,
-            self.5,
-            self.4,
-            self.3,
-            self.2,
-            self.1,
-            self.0,
-        )
-    }
-    fn into_variants(self) -> Self::Variants {
-        [
-            Tuple15::Variant0(self.0),
-            Tuple15::Variant1(self.1),
-            Tuple15::Variant2(self.2),
-            Tuple15::Variant3(self.3),
-            Tuple15::Variant4(self.4),
-            Tuple15::Variant5(self.5),
-            Tuple15::Variant6(self.6),
-            Tuple15::Variant7(self.7),
-            Tuple15::Variant8(self.8),
-            Tuple15::Variant9(self.9),
-            Tuple15::Variant10(self.10),
-            Tuple15::Variant11(self.11),
-            Tuple15::Variant12(self.12),
-            Tuple15::Variant13(self.13),
-            Tuple15::Variant14(self.14),
-        ]
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> NonEmpty
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type LTail = (A, B, C, D, E, F, G, H, I, J, K, L, M, N);
-    fn first(&self) -> &Self::First {
-        &self.0
-    }
-    fn last(&self) -> &Self::Last {
-        &self.14
-    }
-    fn pop_back(self) -> (Self::Last, Self::LTail) {
-        (
-            self.14,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-    fn pop_front(self) -> (Self::Head, Self::Tail) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<0>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = A;
-    type Other = (B, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.0
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<1>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = B;
-    type Other = (A, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.1
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.1,
-            (
-                self.0,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<2>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = C;
-    type Other = (A, B, D, E, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.2
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.2,
-            (
-                self.0,
-                self.1,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<3>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = D;
-    type Other = (A, B, C, E, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.3
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.3,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<4>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = E;
-    type Other = (A, B, C, D, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.4
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.4,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<5>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = F;
-    type Other = (A, B, C, D, E, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.5
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.5,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<6>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = G;
-    type Other = (A, B, C, D, E, F, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.6
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.6,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<7>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = H;
-    type Other = (A, B, C, D, E, F, G, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.7
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.7,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<8>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = I;
-    type Other = (A, B, C, D, E, F, G, H, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.8
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.8,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<9>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = J;
-    type Other = (A, B, C, D, E, F, G, H, I, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.9
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.9,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<10>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = K;
-    type Other = (A, B, C, D, E, F, G, H, I, J, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.10
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.10,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<11>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = L;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.11
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.11,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<12>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = M;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.12
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.12,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<13>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = N;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M, O);
-    fn get(&self) -> &Self::Value {
-        &self.13
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.13,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.14,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> HasElement<14>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Value = O;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M, N);
-    fn get(&self) -> &Self::Value {
-        &self.14
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.14,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> TypeList
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Head = A;
-    type Tail = (B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
-    type First = A;
-    type Last = P;
-    type Reverse = (P, O, N, M, L, K, J, I, H, G, F, E, D, C, B, A);
-    type PushFront<Pushed> = (Pushed, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
-    type PushBack<Pushed> = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Pushed);
-    type Variant = Tuple16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>;
-    type Variants = [Self::Variant; 16];
-    const LEN: usize = 16;
-    const IS_EMPTY: bool = false;
-    fn push_back<Parsed>(self, value: Parsed) -> Self::PushBack<Parsed> {
-        (
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-            self.14,
-            self.15,
-            value,
-        )
-    }
-    fn push_front<Parsed>(self, value: Parsed) -> Self::PushFront<Parsed> {
-        (
-            value,
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10,
-            self.11,
-            self.12,
-            self.13,
-            self.14,
-            self.15,
-        )
-    }
-    fn reverse(self) -> Self::Reverse {
-        (
-            self.15,
-            self.14,
-            self.13,
-            self.12,
-            self.11,
-            self.10,
-            self.9,
-            self.8,
-            self.7,
-            self.6,
-            self.5,
-            self.4,
-            self.3,
-            self.2,
-            self.1,
-            self.0,
-        )
-    }
-    fn into_variants(self) -> Self::Variants {
-        [
-            Tuple16::Variant0(self.0),
-            Tuple16::Variant1(self.1),
-            Tuple16::Variant2(self.2),
-            Tuple16::Variant3(self.3),
-            Tuple16::Variant4(self.4),
-            Tuple16::Variant5(self.5),
-            Tuple16::Variant6(self.6),
-            Tuple16::Variant7(self.7),
-            Tuple16::Variant8(self.8),
-            Tuple16::Variant9(self.9),
-            Tuple16::Variant10(self.10),
-            Tuple16::Variant11(self.11),
-            Tuple16::Variant12(self.12),
-            Tuple16::Variant13(self.13),
-            Tuple16::Variant14(self.14),
-            Tuple16::Variant15(self.15),
-        ]
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> NonEmpty
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type LTail = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    fn first(&self) -> &Self::First {
-        &self.0
-    }
-    fn last(&self) -> &Self::Last {
-        &self.15
-    }
-    fn pop_back(self) -> (Self::Last, Self::LTail) {
-        (
-            self.15,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-            ),
-        )
-    }
-    fn pop_front(self) -> (Self::Head, Self::Tail) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<0>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = A;
-    type Other = (B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.0
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.0,
-            (
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<1>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = B;
-    type Other = (A, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.1
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.1,
-            (
-                self.0,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<2>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = C;
-    type Other = (A, B, D, E, F, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.2
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.2,
-            (
-                self.0,
-                self.1,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<3>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = D;
-    type Other = (A, B, C, E, F, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.3
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.3,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<4>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = E;
-    type Other = (A, B, C, D, F, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.4
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.4,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<5>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = F;
-    type Other = (A, B, C, D, E, G, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.5
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.5,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<6>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = G;
-    type Other = (A, B, C, D, E, F, H, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.6
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.6,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<7>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = H;
-    type Other = (A, B, C, D, E, F, G, I, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.7
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.7,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<8>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = I;
-    type Other = (A, B, C, D, E, F, G, H, J, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.8
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.8,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<9>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = J;
-    type Other = (A, B, C, D, E, F, G, H, I, K, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.9
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.9,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<10>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = K;
-    type Other = (A, B, C, D, E, F, G, H, I, J, L, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.10
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.10,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<11>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = L;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, M, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.11
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.11,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.12,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<12>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = M;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, N, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.12
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.12,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.13,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<13>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = N;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M, O, P);
-    fn get(&self) -> &Self::Value {
-        &self.13
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.13,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.14,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<14>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = O;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, P);
-    fn get(&self) -> &Self::Value {
-        &self.14
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.14,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.15,
-            ),
-        )
-    }
-}
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> HasElement<15>
-for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Value = P;
-    type Other = (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O);
-    fn get(&self) -> &Self::Value {
-        &self.15
-    }
-    fn remove(self) -> (Self::Value, Self::Other) {
-        (
-            self.15,
-            (
-                self.0,
-                self.1,
-                self.2,
-                self.3,
-                self.4,
-                self.5,
-                self.6,
-                self.7,
-                self.8,
-                self.9,
-                self.10,
-                self.11,
-                self.12,
-                self.13,
-                self.14,
             ),
         )
     }
