@@ -1,13 +1,12 @@
-use variadic_t::{TypeList, mapping::{Map3, HasMap3}};
+use variadic_t::{TypeList, mapping::{Map3, HasMap3}, variant::Tuple3};
 
 fn main() {
-    let elements: (&str, u32, i32) = ("a", 1u32, 16);
+    let input = 0;
 
-    let fibration: (usize, String, i32) = elements.map((
-        |a: &str| a.len(),
-        |b: u32| "hi ".repeat(b as usize),
-        |c: i32| c * 100,
-    ));
+    let type_select = |value: usize| {
+        Tuple3::Variant0(value as u32)
+    };
+    let fibration: Tuple3<u32, f32, usize> = type_select(input);
 
-    println!("{:?}", fibration);
+    // println!("{:?}", fibration);
 }
